@@ -9,6 +9,7 @@ cd /var/www/story-weaver-ai
 # Install frontend dependencies
 echo "📦 Installing frontend dependencies..."
 npm install
+npm install --save-dev @types/node
 
 # Install backend dependencies
 echo "📦 Installing backend dependencies..."
@@ -26,8 +27,10 @@ cp backend/.env.production backend/.env
 
 # Create PM2 ecosystem file
 echo "📋 Creating PM2 configuration..."
+# Create PM2 ecosystem configuration
+echo "📋 Creating PM2 configuration..."
 cat > ecosystem.config.js << 'EOF'
-module.exports = {
+export default {
   apps: [
     {
       name: 'story-weaver-backend',
