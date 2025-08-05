@@ -25,8 +25,6 @@ npm run build
 echo "⚙️ Setting up environment..."
 cp backend/.env.production backend/.env
 
-# Create PM2 ecosystem file
-echo "📋 Creating PM2 configuration..."
 # Create PM2 ecosystem configuration
 echo "📋 Creating PM2 configuration..."
 cat > ecosystem.config.js << 'EOF'
@@ -75,7 +73,11 @@ npm install -g serve
 echo "🚀 Starting applications..."
 pm2 start ecosystem.config.js
 pm2 save
-pm2 startup
+
+# Setup PM2 to start on boot
+echo "⚙️ Setting up PM2 to start on boot..."
+sudo pm2 startup systemd -u $USER --hp $HOME
+pm2 save
 
 echo "✅ Application setup complete!"
 echo "🌐 Your app should be running on:"
