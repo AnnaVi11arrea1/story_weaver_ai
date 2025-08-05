@@ -1,0 +1,6 @@
+{
+  "name": "Story Weaver AI",
+  "description": "An interactive application that allows users to create stories with AI-generated images. Generate unique characters, build a library, and craft visual narratives slide by slide.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
