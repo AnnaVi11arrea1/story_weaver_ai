@@ -1,6 +1,6 @@
 server {
     listen 80;
-    rail-bunts-1 159.203.102.103;  # Replace with your VPS IP or domain
+    server_name rail-bunts-1 159.203.102.103;
 
     # Serve the frontend
     location / {
