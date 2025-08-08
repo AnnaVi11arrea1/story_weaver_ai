@@ -1,9 +1,7 @@
 import { getToken } from './authService';
 
 // Use relative URL in production, localhost in development
-const BASE_URL = import.meta.env.PROD 
-  ? '/api'  // Will use the same domain/IP as the frontend
-  : 'http://localhost:5001/api'; // Development URL
+const BASE_URL = '/api'  
 
 interface ApiOptions extends RequestInit {
   body?: any;
