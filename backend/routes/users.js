@@ -1,77 +1,59 @@
 import express from 'express';
-import auth from '../middleware/auth.js';
 import User from '../models/User.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// @route   GET api/users/me
-// @desc    Get current user's profile
-// @access  Private
-router.get('/me', auth, async (req, res) => {
+// Get current user (protected route)
+router.get('/me', authenticateToken, async (req, res) => {
     try {
-        // req.user is populated by auth middleware
-        res.json(req.user);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
-    }
-});
-
-
-// @route   GET api/users/:id
-// @desc    Get user profile by ID
-// @access  Public
-router.get('/:id', async (req, res) => {
-    try {
-        const user = await User.findById(req.params.id).select('-password');
+        const user = await User.findById(req.user.userId).select('-password');
         if (!user) {
-            return res.status(404).json({ msg: 'User not found' });
+            return res.status(404).json({ message: 'User not found' });
         }
-        res.json(user);
-    } catch (err) {
-        console.error(err.message);
-        if (err.kind === 'ObjectId') {
-             return res.status(404).json({ msg: 'User not found' });
-        }
-        res.status(500).send('Server Error');
+
+        res.json({
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role
+            }
+        });
+    } catch (error) {
+        console.error('Get user error:', error);
+        res.status(500).json({ message: 'Error fetching user', error: error.message });
     }
 });
 
-// @route   POST api/users/:id/follow
-// @desc    Follow or unfollow a user
-// @access  Private
-router.post('/:id/follow', auth, async (req, res) => {
+// Update user profile (protected route)
+router.put('/profile', authenticateToken, async (req, res) => {
     try {
-        const userToFollow = await User.findById(req.params.id);
-        const currentUser = await User.findById(req.user.id);
+        const { username, email } = req.body;
+        const userId = req.user.userId;
 
-        if (!userToFollow || !currentUser) {
-            return res.status(404).json({ msg: 'User not found' });
-        }
-        
-        if (userToFollow.id === currentUser.id) {
-            return res.status(400).json({ msg: 'You cannot follow yourself' });
-        }
+        const user = await User.findByIdAndUpdate(
+            userId,
+            { username, email },
+            { new: true, runValidators: true }
+        ).select('-password');
 
-        // Check if already following
-        if (currentUser.following.includes(userToFollow.id)) {
-            // Unfollow
-            currentUser.following = currentUser.following.filter(id => id.toString() !== userToFollow.id);
-            userToFollow.followers = userToFollow.followers.filter(id => id.toString() !== currentUser.id);
-        } else {
-            // Follow
-            currentUser.following.push(userToFollow.id);
-            userToFollow.followers.push(currentUser.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
         }
 
-        await currentUser.save();
-        await userToFollow.save();
-
-        res.json({ following: currentUser.following });
-
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
+        res.json({
+            message: 'Profile updated successfully',
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role
+            }
+        });
+    } catch (error) {
+        console.error('Update profile error:', error);
+        res.status(500).json({ message: 'Error updating profile', error: error.message });
     }
 });
 

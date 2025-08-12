@@ -1,5 +1,5 @@
 import express from 'express';
-import auth from '../middleware/auth.js';
+import { authenticateToken } from '../middleware/auth.js';
 import Group from '../models/Group.js';
 import Story from '../models/Story.js';
 
@@ -8,7 +8,7 @@ const router = express.Router();
 // @route   POST api/groups
 // @desc    Create a new group
 // @access  Private
-router.post('/', auth, async (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
     const { name, description, isPrivate } = req.body;
     try {
         const newGroup = new Group({
@@ -30,7 +30,7 @@ router.post('/', auth, async (req, res) => {
 // @route   GET api/groups/my-groups
 // @desc    Get all groups for the logged in user
 // @access  Private
-router.get('/my-groups', auth, async (req, res) => {
+router.get('/my-groups', authenticateToken, async (req, res) => {
     try {
         const groups = await Group.find({ members: req.user.id }).populate('owner', ['username']);
         res.json(groups);
@@ -56,7 +56,7 @@ router.get('/public', async (req, res) => {
 // @route   POST api/groups/:id/join
 // @desc    Join a group
 // @access  Private
-router.post('/:id/join', auth, async (req, res) => {
+router.post('/:id/join', authenticateToken, async (req, res) => {
     try {
         const group = await Group.findById(req.params.id);
         if (!group) return res.status(404).json({ msg: 'Group not found' });
@@ -75,8 +75,8 @@ router.post('/:id/join', auth, async (req, res) => {
 // @route   POST api/groups/:groupId/share/:storyId
 // @desc    Share a story to a group
 // @access  Private
-router.post('/:groupId/share/:storyId', auth, async (req, res) => {
-     try {
+router.post('/:groupId/share/:storyId', authenticateToken, async (req, res) => {
+    try {
         const group = await Group.findById(req.params.groupId);
         const story = await Story.findById(req.params.storyId);
 

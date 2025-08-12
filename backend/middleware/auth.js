@@ -1,19 +1,34 @@
-import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
+import { verifyToken } from '../utils/jwt.js';
 
-export default async function auth(req, res, next) {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+export const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
     if (!token) {
-        return res.status(401).json({ message: 'No token, authorization denied' });
+        return res.status(401).json({ message: 'Access token required' });
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = await User.findById(decoded.user.id).select('-password'); // exclude password
+        const decoded = verifyToken(token);
+        req.user = decoded;
         next();
-    } catch (err) {
-        console.error(err);
-        res.status(401).json({ message: 'Token is not valid' });
+    } catch (error) {
+        return res.status(403).json({ message: 'Invalid or expired token' });
     }
-}
+};
+
+export const optionalAuth = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (token) {
+        try {
+            const decoded = verifyToken(token);
+            req.user = decoded;
+        } catch (error) {
+            // Token is invalid, but we continue without user
+            req.user = null;
+        }
+    }
+    next();
+};

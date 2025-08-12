@@ -1,108 +1,118 @@
 import express from 'express';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
-import auth from '../middleware/auth.js';
+import { generateToken } from '../utils/jwt.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// @route   POST api/auth/register
-// @desc    Register a new user
-// @access  Public
+// Register
 router.post('/register', async (req, res) => {
-    const { username, email, password } = req.body;
-
     try {
-        if (!username || !email || !password) {
-            return res.status(400).json({ message: 'Please enter all fields' });
+        const { username, email, password } = req.body;
+
+        // Check if user already exists
+        const existingUser = await User.findOne({
+            $or: [{ email }, { username }]
+        });
+
+        if (existingUser) {
+            return res.status(400).json({
+                message: 'User with this email or username already exists'
+            });
         }
 
-        let user = await User.findOne({ email });
-        if (user) {
-            return res.status(400).json({ message: 'User already exists' });
-        }
-        
-        let userByUsername = await User.findOne({ username });
-        if (userByUsername) {
-            return res.status(400).json({ message: 'Username is already taken' });
-        }
-
-        user = new User({ username, email, password });
-
-        // Hash password before saving
-        // This is handled by the pre-save hook in the User model
-
+        // Create new user
+        const user = new User({ username, email, password });
         await user.save();
 
-        const payload = { user: { id: user.id } };
+        // Generate JWT token
+        const token = generateToken({
+            userId: user._id,
+            username: user.username,
+            email: user.email
+        });
 
-        jwt.sign(
-            payload,
-            process.env.JWT_SECRET,
-            { expiresIn: '5h' },
-            (err, token) => {
-                if (err) throw err;
-                const { password, ...userResponse } = user.toObject();
-                res.json({ token, user: userResponse });
+        res.status(201).json({
+            message: 'User created successfully',
+            token,
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role
             }
-        );
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server error');
+        });
+    } catch (error) {
+        console.error('Registration error:', error);
+        res.status(500).json({ message: 'Error creating user', error: error.message });
     }
 });
 
-// @route   POST api/auth/login
-// @desc    Authenticate user & get token
-// @access  Public
+// Login
 router.post('/login', async (req, res) => {
-    const { email, password } = req.body;
-
     try {
-        if (!email || !password) {
-            return res.status(400).json({ message: 'Please provide email and password' });
-        }
-        
+        const { email, password } = req.body;
+
+        // Find user by email
         const user = await User.findOne({ email });
         if (!user) {
-            return res.status(400).json({ message: 'Invalid credentials' });
+            return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(400).json({ message: 'Invalid credentials' });
+        // Check password
+        const isPasswordValid = await user.comparePassword(password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        const payload = { user: { id: user.id } };
+        // Generate JWT token
+        const token = generateToken({
+            userId: user._id,
+            username: user.username,
+            email: user.email
+        });
 
-        jwt.sign(
-            payload,
-            process.env.JWT_SECRET,
-            { expiresIn: '5h' },
-            (err, token) => {
-                if (err) throw err;
-                const { password, ...userResponse } = user.toObject();
-                res.json({ token, user: userResponse });
+        res.json({
+            message: 'Login successful',
+            token,
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role
             }
-        );
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server error');
+        });
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ message: 'Error logging in', error: error.message });
     }
 });
 
-// @route   GET api/auth/me
-// @desc    Get the current logged in user
-// @access  Private
-router.get('/me', auth, async (req, res) => {
+// Verify token / Get current user
+router.get('/me', authenticateToken, async (req, res) => {
     try {
-        // req.user is attached by the auth middleware
-        res.json(req.user);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
+        const user = await User.findById(req.user.userId).select('-password');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json({
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role
+            }
+        });
+    } catch (error) {
+        console.error('Get user error:', error);
+        res.status(500).json({ message: 'Error fetching user', error: error.message });
     }
 });
 
+// Logout (client-side removes token, but you can add token blacklisting here)
+router.post('/logout', authenticateToken, (req, res) => {
+    res.json({ message: 'Logged out successfully' });
+});
 
 export default router;

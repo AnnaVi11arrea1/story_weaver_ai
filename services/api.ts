@@ -1,9 +1,22 @@
 import { getToken } from './authService';
 
-// Use the server IP for API calls
-const BASE_URL = process.env.NODE_ENV === 'production' 
-  ? '/api' 
-  : 'http://159.203.102.103:3001/api'
+// Get the base URL from the current location or environment
+const getBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname.includes('app.github.dev')) {
+      // Extract the codespace name and construct the backend URL
+      const codespace = hostname.split('-')[0];
+      return `https://${codespace}-3001.app.github.dev/api`;
+    }
+  }
+  
+  return process.env.NODE_ENV === 'production' 
+    ? '/api' 
+    : 'http://localhost:3001/api';
+};
+
+const BASE_URL = getBaseUrl();
 
 interface ApiOptions extends RequestInit {
   body?: any;

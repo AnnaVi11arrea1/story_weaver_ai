@@ -1,12 +1,16 @@
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'; // Use strong secret in production
-const EXPIRES_IN = '7d'; // Or '1h', etc.
+const JWT_SECRET = process.env.JWT_SECRET || 'your-fallback-secret-key';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
-export const generateToken = (user) => {
-  return jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: EXPIRES_IN });
+export const generateToken = (payload) => {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 };
 
 export const verifyToken = (token) => {
-  return jwt.verify(token, JWT_SECRET);
+  try {
+    return jwt.verify(token, JWT_SECRET);
+  } catch (error) {
+    throw new Error('Invalid or expired token');
+  }
 };

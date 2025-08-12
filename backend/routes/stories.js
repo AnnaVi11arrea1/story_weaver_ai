@@ -1,5 +1,5 @@
 import express from 'express';
-import auth from '../middleware/auth.js';
+import  { authenticateToken } from '../middleware/auth.js';
 import Story from '../models/Story.js';
 import User from '../models/User.js';
 import Comment from '../models/Comment.js';
@@ -9,7 +9,7 @@ const router = express.Router();
 // @route   POST api/stories
 // @desc    Create a new story
 // @access  Private
-router.post('/', auth, async (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
     try {
         const { titlePage, slides, tags } = req.body;
         const newStory = new Story({
@@ -30,7 +30,7 @@ router.post('/', auth, async (req, res) => {
 // @route   PUT api/stories/:id
 // @desc    Update an existing story
 // @access  Private
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', authenticateToken, async (req, res) => {
     try {
         const { titlePage, slides, isPublic, tags } = req.body;
         let story = await Story.findById(req.params.id);
@@ -107,7 +107,7 @@ router.get('/:id', async (req, res) => {
 // @route   POST api/stories/:id/share
 // @desc    Make a story public
 // @access  Private
-router.post('/:id/share', auth, async (req, res) => {
+router.post('/:id/share', authenticateToken, async (req, res) => {
     try {
         let story = await Story.findById(req.params.id);
         if (!story) return res.status(404).json({ msg: 'Story not found' });
@@ -125,7 +125,7 @@ router.post('/:id/share', auth, async (req, res) => {
 // @route   POST api/stories/:id/like
 // @desc    Like or unlike a story
 // @access  Private
-router.post('/:id/like', auth, async (req, res) => {
+router.post('/:id/like', authenticateToken, async (req, res) => {
     try {
         const story = await Story.findById(req.params.id);
         if (!story) return res.status(404).json({ msg: 'Story not found' });
@@ -150,7 +150,7 @@ router.post('/:id/like', auth, async (req, res) => {
 // @route   POST api/stories/:id/comment
 // @desc    Comment on a story
 // @access  Private
-router.post('/:id/comment', auth, async (req, res) => {
+router.post('/:id/comment', authenticateToken, async (req, res) => {
     try {
         const story = await Story.findById(req.params.id);
         if (!story) return res.status(404).json({ msg: 'Story not found' });
