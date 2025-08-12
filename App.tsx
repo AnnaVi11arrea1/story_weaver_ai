@@ -15,6 +15,7 @@ import Navigation from './components/Navigation';
 import { AuthModal } from './components/AuthModal';
 import { ShareModal } from './components/ShareModal';
 import SocialPage from './pages/SocialPage';
+import { getToken } from './services/authService';
 
 type AppView = 'story' | 'editor' | 'presenting' | 'public_story' | 'social';
 type AuthMode = 'login' | 'signup';
@@ -53,10 +54,19 @@ function App(): React.ReactNode {
     const checkAuth = async () => {
       setAuthLoading(true);
       try {
-        const user = await getMe();
-        setCurrentUser(user);
+        const token = getToken();
+        if (!token) {
+          console.log('No token found');
+          return;
+        }
+
+        const userData = await getMe();
+        setCurrentUser(userData.user);
+        console.log('User authenticated:', userData.user);
       } catch (error) {
-        console.log("No authenticated user found.");
+        console.log('Authentication check failed:', error.message);
+        // Clear any invalid token
+        localStorage.removeItem('token');
         setCurrentUser(null);
       } finally {
         setAuthLoading(false);
