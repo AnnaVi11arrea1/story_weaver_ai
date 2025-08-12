@@ -61,8 +61,8 @@ function App(): React.ReactNode {
         }
 
         const userData = await getMe();
-        setCurrentUser(userData.user);
-        console.log('User authenticated:', userData.user);
+        setCurrentUser(userData);
+        console.log('User authenticated:', userData);
       } catch (error) {
         console.log('Authentication check failed:', error.message);
         // Clear any invalid token
