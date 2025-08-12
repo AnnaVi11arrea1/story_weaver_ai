@@ -1,32 +1,22 @@
-export default {
+module.exports = {
   apps: [
     {
-      name: 'story-weaver-backend',
-      script: 'backend/server.js',
-      cwd: '/var/www/story-weaver-ai',
-      instances: 1,
-      exec_mode: 'fork',
+      name: 'story-weaver-frontend',
+      script: 'npm',
+      args: 'run dev',
+      cwd: '/workspaces/story_weaver_ai',
       env: {
-        NODE_ENV: 'production',
-        PORT: 5001
-      },
-      error_file: '/var/log/story-weaver/backend-error.log',
-      out_file: '/var/log/story-weaver/backend-out.log',
-      log_file: '/var/log/story-weaver/backend-combined.log'
+        NODE_ENV: 'development'
+      }
     },
     {
-      name: 'story-weaver-frontend',
-      script: 'npx',
-      args: 'serve -s dist -l 3000',
-      cwd: '/var/www/story-weaver-ai',
-      instances: 1,
-      exec_mode: 'fork',
+      name: 'story-weaver-backend',
+      script: 'npm',
+      args: 'run dev:backend',
+      cwd: '/workspaces/story_weaver_ai',
       env: {
-        NODE_ENV: 'production'
-      },
-      error_file: '/var/log/story-weaver/frontend-error.log',
-      out_file: '/var/log/story-weaver/frontend-out.log',
-      log_file: '/var/log/story-weaver/frontend-combined.log'
+        NODE_ENV: 'development'
+      }
     }
   ]
 };

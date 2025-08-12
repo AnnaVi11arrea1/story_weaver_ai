@@ -1,7 +1,9 @@
 import { getToken } from './authService';
 
-// Use relative URL in production, localhost in development
-const BASE_URL = '/api'  
+// Use the server IP for API calls
+const BASE_URL = process.env.NODE_ENV === 'production' 
+  ? '/api' 
+  : 'http://159.203.102.103:3001/api'
 
 interface ApiOptions extends RequestInit {
   body?: any;
@@ -34,12 +36,25 @@ const request = async (endpoint: string, options: ApiOptions = {}) => {
   
   try {
     const response = await fetch(`${BASE_URL}${endpoint}`, config);
-    const data = await response.json();
+    
+    // Check if response has content
+    const text = await response.text();
+    
+    if (!text) {
+      throw new Error('Empty response from server');
+    }
+    
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (parseError) {
+      console.error('Failed to parse JSON:', text);
+      throw new Error(`Invalid JSON response: ${text.substring(0, 100)}`);
+    }
 
     if (!response.ok) {
-        // If the server returns a JSON with a message field, use it.
-        const errorMessage = data.message || `An error occurred: ${response.statusText}`;
-        throw new Error(errorMessage);
+      const errorMessage = data.message || `An error occurred: ${response.statusText}`;
+      throw new Error(errorMessage);
     }
     
     return data;
